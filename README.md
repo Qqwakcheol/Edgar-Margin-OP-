@@ -2,21 +2,23 @@
 Extracting crucial financial figures such as Operating Profit Margin etc from edgar
 # SEC EDGAR Financial Data Extractor (Mag 7 & Semiconductors)
 
-An automated financial analysis tool built in Python to programmatically connect to the **US SEC EDGAR API**, extract US-GAAP financial elements, and calculate operating profit margins for Tier-1 Tech (Magnificent 7) and Major Semiconductor companies.
+An automated financial analysis tool built in Python to connect to the **US SEC EDGAR API**, extract US-GAAP financial elements, and calculate operating profit margins for Mag 7 and Major Semiconductor companies.
 
 ## Overview
-- **Objective:** Eliminate manual financial data gathering from PDF filings by shifting to structured corporate reporting data (XBRL/JSON).
+- ** Extraction of OP% into DF format
 - **Target Companies:** 
   - **Mag 7:** AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA
-  - **Semiconductors & Equipment:** MU (Micron), AMAT (Applied Materials), WDC (Western Digital / SanDisk)
+  - **+ 3 Semiconductors & Equipment firms:** MU (Micron), AMAT (Applied Materials), WDC (Western Digital / SanDisk)
 - **Key Metric Evaluated:** Operating Profit Margin ($Operating\,Income \div Gross\,Revenue$) across recent 10-K (Annual Report) filings.
 
-## 🛠️ Key Technical Implementations
-- **SEC EDGAR API Protocol:** Embedded compliant User-Agent headers required by the SECイ민국 to prevent automated bot blocks.
+## Key Technical Implementations
+- Def function iterating through each cik: 1. Response (SEC) file identified --> 2. converted to json--> 3. Dig deeper and get the json element for us-gaap figures
+4. Revenue and OP identified within us-gaap 5. convert data to df and filter for 10K only and the recent 3 years etc. 6. then executes the iteration from line 77 onward 8. merged and turned into pivot df in later lines
+- **SEC EDGAR API Protocol:** Embedded compliant User-Agent headers required by the SEC to prevent automated bot blocks.
 - **Dynamic US-GAAP Mapping:** Handled non-standardized XBRL taxonomy variations (e.g., parsing multiple financial tags like `RevenueFromContractWithCustomerExcludingAssessedTax` and `SalesRevenueNet` depending on the company's reporting structure).
 - **Data Pipeline:** Leveraged `pandas` to clean, merge, deduplicate 10-K forms, and pivot complex nested JSON metrics into structured analytical tables.
 
-## 📈 Sample Analytical Output
+## Sample Analytical Output
 ```text
 === Operating Profit Margin (Recent 10-K Filings) ===
 fy          2023     2024     2025
