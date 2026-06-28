@@ -83,7 +83,7 @@ if __name__ == "__main__": # dundered just in case
             results.append(df) # added to 'results' as more valid df's come in
             
     if results: # if there's any data in 'results'
-        final_df = pd.concat(results, ignore_index=True) # turn the discrete df's in 'results' into pd df, ignore original index and assign new one
+        final_df = pd.concat(results, ignore_index=True) # turn the discrete df's in 'results' into a single pd df, ignore original index and assign new one
       
         # Transformation to pivot df for readability 
         pivot_df = final_df.pivot(index='Ticker', columns='fy', values='Operating_Margin') 
