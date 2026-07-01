@@ -18,11 +18,11 @@ COMPANIES = {
 }
 
 def get_operating_margin(ticker, form='10-K'): # uses the ticker & form as inputs to generate df containing ticker, period, op margin as columns
-    cik = COMPANIES[ticker]['cik']
+    cik = COMPANIES[ticker]['cik'] # cik value
     url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json" #e.g. TSLA --> ~~CIK{0001318605}
 
     try:
-        response = requests.get(url, headers=HEADERS) #HEADERS is at line 6 (user agent)
+        response = requests.get(url, headers=HEADERS) # HEADERS is at line 6 (user agent)
         if response.status_code != 200: # status code is 200 when successful, ergo != 200 --> unsuccessful
             print(f"[{ticker}] Failed to fetch data. Status code: {response.status_code}")
             return None
@@ -33,11 +33,11 @@ def get_operating_margin(ticker, form='10-K'): # uses the ticker & form as input
 
         # 1. US-GAAP Revenue tag
         revenue_keys = ['RevenueFromContractWithCustomerExcludingAssessedTax', 'SalesRevenueNet', 'Revenues'] # Trying all 3 different names for Rev
-        revenue_data = None
+        revenue_data = None 
         for key in revenue_keys:
             if key in us_gaap:
                 revenue_data = us_gaap[key]['units']['USD']
-                break # don't bother with the next one upon successful run
+                break # don't bother with the next iteration (from revenue_keys) upon successful run
 
         # 2. US-GAAP Operating Income tag
         op_inc_keys = ['OperatingIncomeLoss', 'OperatingProfit']
@@ -51,19 +51,19 @@ def get_operating_margin(ticker, form='10-K'): # uses the ticker & form as input
             return None
 
         ## Converting to pandas DF
-        df_rev = pd.DataFrame(revenue_data)
+        df_rev = pd.DataFrame(revenue_data) # has 10K, 10Q and even 10K/A possibly
         df_op  = pd.DataFrame(op_inc_data)
 
         # form 필터 (10-K or 10-Q)
-        df_rev = df_rev[df_rev['form'] == form].copy()
+        df_rev = df_rev[df_rev['form'] == form].copy() # leave data rows with 'True' only
         df_op  = df_op[df_op['form']  == form].copy()
 
         if form == '10-K':
             ## Filtering for 10-K only
             df_rev = df_rev.drop_duplicates(subset=['fy']) # if somehow 2 outputs exist for the same fy, drop duplicates
             df_op  = df_op.drop_duplicates(subset=['fy'])
-            df_merged = pd.merge(df_rev, df_op, on='fy', suffixes=('_rev', '_op'))
-            df_merged['period_label'] = df_merged['fy'].astype(str)  # e.g. "2024"
+            df_merged = pd.merge(df_rev, df_op, on='fy', suffixes=('_rev', '_op')) # since the headers are named the same for both df_rev & op, adding suffixes to distinguish them
+            df_merged['period_label'] = df_merged['fy'].astype(str)  # e.g. "2024" # turning 10K labels to string bc of consistency(i.e. the period labels for 10Q are strings)
             # Filtering for recent 3 years
             df_result = df_merged.sort_values('fy', ascending=False).head(3)
 
@@ -81,7 +81,7 @@ def get_operating_margin(ticker, form='10-K'): # uses the ticker & form as input
 
         # Integrating data for each period and calculating the OP%
         df_result['Operating_Margin'] = df_result['val_op'] / df_result['val_rev']
-        df_result['Ticker'] = ticker # Adding column for the ticker ('ticker' was entered as parameter)
+        df_result['Ticker'] = ticker # Adding column for the ticker ('ticker' was entered only as parameter)
         return df_result[['Ticker', 'period_label', 'Operating_Margin']]
 
     # in case of error: exception linked to the 'try' above
