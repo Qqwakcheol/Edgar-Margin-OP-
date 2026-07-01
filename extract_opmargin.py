@@ -17,7 +17,7 @@ COMPANIES = {
     'WDC':  {'cik': '0000106040', 'name': 'Western Digital Corp. (SanDisk)'}
 }
 
-def get_operating_margin(ticker, form='10-K'):
+def get_operating_margin(ticker, form='10-K'): # uses the ticker & form as inputs to generate df containing ticker, period, op margin as columns
     cik = COMPANIES[ticker]['cik']
     url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json" #e.g. TSLA --> ~~CIK{0001318605}
 
