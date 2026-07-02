@@ -12,11 +12,15 @@ An automated financial analysis tool built in Python to connect to the **US SEC 
 - **Key Metric Evaluated:** Operating Profit Margin ($Operating\,Income \div Gross\,Revenue$) across recent 10-K (Annual Report) filings.
 
 ## Key Technical Implementations
-- Def function iterating through each cik: 1. Response (SEC) file identified --> 2. converted to json--> 3. Dig deeper and get the json element for us-gaap figures
-4. Revenue and OP identified within us-gaap 5. convert data to df and filter for 10K only and the recent 3 years etc. 6. then executes the iteration from line 77 onward 8. merged and turned into pivot df in later lines
-- **SEC EDGAR API Protocol:** Embedded compliant User-Agent headers required by the SEC to prevent automated bot blocks.
-- **Dynamic US-GAAP Mapping:** Handled non-standardized XBRL taxonomy variations (e.g., parsing multiple financial tags like `RevenueFromContractWithCustomerExcludingAssessedTax` and `SalesRevenueNet` depending on the company's reporting structure).
-- **Data Pipeline:** Leveraged `pandas` to clean, merge, deduplicate 10-K forms, and pivot complex nested JSON metrics into structured analytical tables.
+- Def function iterating through each cik:
+- 1. Response (SEC) file identified -->
+  2. 2. converted to json-->
+  3. Dig deeper and get the json element for us-gaap figures
+  4. Revenue and OP identified within us-gaap
+  5. convert data to df and filter for 10K only and the recent 3 years etc.
+  6. then executes the iteration from line 77 onward
+  7. merged and turned into pivot df in later lines
+
 
 ## Sample Analytical Output
 ```text
@@ -24,6 +28,8 @@ An automated financial analysis tool built in Python to connect to the **US SEC 
 fy          2023     2024     2025
 Ticker
 AAPL      29.82%   30.58%      N/A
-NVDA      43.73%   61.34%   64.12%
+NVDA      43.73%   61.34%   64.12% (NVDA's financial year treatment differs from the conventional)
 MSFT      41.77%   44.57%      N/A
 ... (Automated output truncated)
+
+**Visualization code ** added 
