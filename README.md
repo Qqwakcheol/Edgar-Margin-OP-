@@ -25,11 +25,12 @@ An automated financial analysis tool built in Python to connect to the **US SEC 
 ## Sample Analytical Output
 ```text
 === Operating Profit Margin (Recent 10-K Filings) ===
-fy          2023     2024     2025
+fy            2023        2024        2025
 Ticker
-AAPL      29.82%   30.58%      N/A
-NVDA      43.73%   61.34%   64.12% (NVDA's financial year treatment differs from the conventional)
-MSFT      41.77%   44.57%      N/A
+AAPL        29.82%      30.58%         N/A
+NVDA        43.73%      61.34%      64.12% (NVDA's financial year treatment differs from the conventional)
+MSFT        41.77%      44.57%         N/A
 ... (Automated output truncated)
+```
 
-**Visualization code ** added 
+## Visualization codes added
