@@ -14,7 +14,7 @@ COMPANIES = {
     'TSLA': {'cik': '0001318605', 'name': 'Tesla, Inc.'},
     'MU':   {'cik': '0000723125', 'name': 'Micron Technology, Inc.'},
     'AMAT': {'cik': '0000006951', 'name': 'Applied Materials, Inc.'},
-    'WDC':  {'cik': '0000106040', 'name': 'Western Digital Corp. (SanDisk)'}
+    'WDC':  {'cik': '0000106040', 'name': 'Western Digital Corp.'}
     }
 def get_operating_margin(ticker, form='10-K'):
     cik = COMPANIES[ticker]['cik']
@@ -30,14 +30,14 @@ def get_operating_margin(ticker, form='10-K'):
         us_gaap = data.get('facts', {}).get('us-gaap', {}) # 'data' json is composed of multiple 'files' within, and what we want is just the 'us-gaap' within 'facts'
         ### why use '.get'?---> to make sure in case the files are not named 'facts' or 'us-gaap', the code doesn't generate error and instead give blanks (i.e. {})
 
-        # 1. US-GAAP Revenue tag (모든 후보 태그를 합쳐서 사용 — 태그 전환 대응)
+        # 1. US-GAAP Revenue tag (trying different tag names)
         revenue_keys = ['RevenueFromContractWithCustomerExcludingAssessedTax', 'SalesRevenueNet', 'Revenues']
         revenue_frames = []
         for key in revenue_keys:
             if key in us_gaap:
                 revenue_frames.append(pd.DataFrame(us_gaap[key]['units']['USD']))
 
-        # 2. US-GAAP Operating Income tag (마찬가지로 모두 합침)
+        # 2. US-GAAP Operating Income tag
         op_inc_keys = ['OperatingIncomeLoss', 'OperatingProfit']
         op_inc_frames = []
         for key in op_inc_keys:
@@ -47,11 +47,11 @@ def get_operating_margin(ticker, form='10-K'):
         if not revenue_frames or not op_inc_frames:
             return None
 
-        ## Converting to pandas DF (여러 태그에서 온 데이터를 하나로 합침)
+        ## Converting to pandas DF 
         df_rev = pd.concat(revenue_frames, ignore_index=True)
         df_op  = pd.concat(op_inc_frames, ignore_index=True)
 
-        # form 필터 (10-K or 10-Q)
+        # form filter (10-K or 10-Q)
         df_rev = df_rev[df_rev['form'] == form].copy()
         df_op  = df_op[df_op['form']  == form].copy()
 
@@ -59,11 +59,11 @@ def get_operating_margin(ticker, form='10-K'):
         df_rev = df_rev.dropna(subset=['fy'])# if somehow 2 outputs exist for the same fy, drop duplicates
         df_op  = df_op.dropna(subset=['fy'])
 
-        ## Filtering for 10-K only (같은 fy가 여러 태그에서 오면 가장 최근에 filed된 값을 남김)
+        ## Filtering for 10-K only (if the same fy outputs from different tags, the most recently filed one remains)
         df_rev = df_rev.sort_values('filed').drop_duplicates(subset=['fy'], keep='last')
         df_op  = df_op.sort_values('filed').drop_duplicates(subset=['fy'], keep='last')
         df_merged = pd.merge(df_rev, df_op, on='fy', suffixes=('_rev', '_op'))
-        df_merged['period_label'] = df_merged['fy'].astype(int).astype(str)# e.g. "2024" (int 경유로 "2024.0" 방지)
+        df_merged['period_label'] = df_merged['fy'].astype(int).astype(str)# e.g. "2024" (prevent 2024.0)
         # Filtering for recent 3 years
         df_result = df_merged.sort_values('fy', ascending=False).head(3)
 
@@ -90,10 +90,9 @@ def get_operating_margin(ticker, form='10-K'):
         # Transformation to pivot df for readability
         pivot_df = final_df.pivot(index='Ticker', columns='period_label', values='Operating_Margin')
         
-        # [CSV 저장 코드 추가]
-        # utf-8-sig를 지정해줘야 Excel에서 한글이나 기호가 깨지지 않고 깔끔하게 열립니다.
-        pivot_df.to_csv(filename, encoding='utf-8-sig')
-        print(f"\n데이터가 성공적으로 '{filename}' 파일로 저장되었습니다.")
+        # [CSV  filecode]
+        pivot_df.to_csv(filename, encoding='utf-8-sig') # utf-8-sig to prevent glitches in excel
+        print(f"\n Data successfully saved as '{filename}'.")
 
         label = "Annual (10-K)" if form == '10-K' else "Quarterly (10-Q)"
         print(f"\n=== Operating Profit Margin — {label} ===")
@@ -105,43 +104,43 @@ def get_operating_margin(ticker, form='10-K'):
 if __name__ == "__main__": # dundered just in case
     run_and_save_csv('10-K')
 
+#################### Visualization
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
 
 def plot_margin_heatmap(pivot_df, title="Operating Profit Margin — Annual (10-K)", save_path=None):
     """
-    pivot_df: run_and_print()에서 만들어지는 pivot_df를 그대로 받음
-              (index=Ticker, columns=period_label, values=Operating_Margin, 0~1 소수 형태)
+    pivot_df: received directly from run_and_print() from line 91
+              (index=Ticker, columns=period_label, values=Operating_Margin, decimal between 0~1)
     """
 
-    # % 단위로 변환 (0.298 -> 29.8)
+    # converted to %
     plot_df = pivot_df * 100
 
-    # 보기 좋게 컬럼(연도) 오름차순 정렬
+    # 1. sort the column names (by alphabet or number) 2. Use that order to reindex the columns
     plot_df = plot_df.reindex(sorted(plot_df.columns), axis=1)
 
-    # 평균 마진 기준으로 티커 정렬 (내림차순) -> 위쪽에 고마진 기업이 오도록
+    # 1. Get mean margin for each company 2. Sort by descending 3. Get the indices(company names) in that order 4. plot_df.loc[company names] Get the rows in that order
     plot_df = plot_df.loc[plot_df.mean(axis=1, skipna=True).sort_values(ascending=False).index]
 
     fig, ax = plt.subplots(figsize=(1.4 * len(plot_df.columns) + 2, 0.55 * len(plot_df) + 2))
 
     sns.heatmap(
         plot_df,
-        annot=True,                 # 셀 안에 숫자 표시
-        fmt=".1f",                  # 소수점 1자리
-        cmap="RdYlGn",               # 빨강(낮음) -> 초록(높음)
-        center=0,                    # 0%를 기준 색으로
+        annot=True,                 # Number in the cells
+        fmt=".1f",                  # 1 digit decimal
+        cmap="RdYlGn",               # Red (low)-> Green (High)
+        center=0,                    # 0% at the center
         linewidths=0.6,
         linecolor="white",
         cbar_kws={"label": "Operating Margin (%)"},
         annot_kws={"size": 10},
-        mask=plot_df.isna(),         # N/A 셀은 색칠하지 않음
+        mask=plot_df.isna(),         # N/A cells not colored
         ax=ax
     )
 
-    # N/A 셀에 연한 회색 표시 + "N/A" 텍스트
+    # N/A cell treatments (light gray)  + "N/A" Text
     for i, ticker in enumerate(plot_df.index):
         for j, col in enumerate(plot_df.columns):
             if pd.isna(plot_df.iloc[i, j]):
@@ -165,7 +164,7 @@ def plot_margin_heatmap(pivot_df, title="Operating Profit Margin — Annual (10-
 
 
 if __name__ == "__main__":
-    # ── 데모용 예시 데이터 (실제로는 run_and_print()의 pivot_df를 그대로 넣으면 됨) ──
+    # ── Demo data ──
     data = {
         "2023": [0.2982, 0.2886, 0.0261, 0.2742, 0.2482, 0.4177, 0.6243, 0.5412, 0.1091, 0.1941],
         "2024": [0.3151, 0.2895, 0.1075, 0.3974, 0.5950, 0.4464, 0.0519, 0.6242, 0.0724, -0.0244],
